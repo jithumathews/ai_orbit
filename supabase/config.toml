@@ -1,0 +1,20 @@
+# AI Orbit Supabase Configuration
+project_id = "ai-orbit"
+
+[api]
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+
+[studio]
+port = 54323
+
+[functions.ai-chat]
+verify_jwt = false
+
+[functions.model-status]
+verify_jwt = false
