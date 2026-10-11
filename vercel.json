@@ -1,5 +1,4 @@
 {
-  "buildCommand": "bash deployment.sh",
   "outputDirectory": "build/web",
   "framework": null,
   "cleanUrls": true,
