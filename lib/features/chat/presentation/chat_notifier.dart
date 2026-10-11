@@ -18,7 +18,7 @@ class ChatNotifier extends Notifier<ChatState> {
 
   @override
   ChatState build() {
-    final initialPlanet = ref.watch(planetNotifierProvider);
+    final initialPlanet = ref.read(planetNotifierProvider);
 
     ref.onDispose(() {
       _streamSub?.cancel();
@@ -139,6 +139,19 @@ class ChatNotifier extends Notifier<ChatState> {
       currentMsgs[lastIdx] = lastMsg.copyWith(
         content: lastMsg.content + event.delta!,
         isStreaming: true,
+      );
+      state = state.copyWith(messages: currentMsgs);
+    } else if (event.type == 'search') {
+      currentMsgs[lastIdx] = lastMsg.copyWith(
+        searchedWeb: true,
+        searchQuery: event.searchQuery,
+      );
+      state = state.copyWith(messages: currentMsgs);
+    } else if (event.type == 'sources') {
+      currentMsgs[lastIdx] = lastMsg.copyWith(
+        sources: event.sources ?? [],
+        searchedWeb: true,
+        searchDate: DateTime.now().toIso8601String().split('T')[0],
       );
       state = state.copyWith(messages: currentMsgs);
     } else if (event.type == 'fallback') {

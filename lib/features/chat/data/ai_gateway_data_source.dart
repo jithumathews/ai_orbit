@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/config/orbit_config.dart';
 import '../../auth/data/auth_repository.dart';
+import '../domain/models/chat_source.dart';
 
 final aiGatewayDataSourceProvider = Provider<AiGatewayDataSource>((ref) {
   final auth = ref.watch(authRepositoryProvider);
@@ -11,7 +12,7 @@ final aiGatewayDataSourceProvider = Provider<AiGatewayDataSource>((ref) {
 });
 
 class GatewayEvent {
-  final String type; // 'token', 'usage', 'done', 'error', 'fallback'
+  final String type; // 'token', 'usage', 'done', 'error', 'fallback', 'search', 'sources'
   final String? delta;
   final int? inputTokens;
   final int? outputTokens;
@@ -23,6 +24,10 @@ class GatewayEvent {
   final String? errorCode;
   final String? message;
   final bool? retryable;
+  final List<ChatSource>? sources;
+  final String? searchQuery;
+  final int? sourcesCount;
+  final String? searchProvider;
 
   GatewayEvent({
     required this.type,
@@ -37,11 +42,22 @@ class GatewayEvent {
     this.errorCode,
     this.message,
     this.retryable,
+    this.sources,
+    this.searchQuery,
+    this.sourcesCount,
+    this.searchProvider,
   });
 
   factory GatewayEvent.fromSSE(String eventName, String dataJson) {
     try {
       final map = jsonDecode(dataJson) as Map<String, dynamic>;
+      List<ChatSource>? parsedSources;
+      if (map['sources'] is List) {
+        parsedSources = (map['sources'] as List)
+            .map((item) => ChatSource.fromJson(item as Map<String, dynamic>))
+            .toList();
+      }
+
       return GatewayEvent(
         type: eventName,
         delta: map['delta'] as String?,
@@ -55,6 +71,10 @@ class GatewayEvent {
         errorCode: map['error_code'] as String?,
         message: map['message'] as String?,
         retryable: map['retryable'] as bool?,
+        sources: parsedSources,
+        searchQuery: map['query'] as String?,
+        sourcesCount: map['sources_count'] as int?,
+        searchProvider: map['provider'] as String?,
       );
     } catch (e) {
       return GatewayEvent(type: 'error', message: 'Failed to decode gateway packet: $e');
@@ -228,12 +248,44 @@ class AiGatewayDataSource {
         break;
     }
 
+    if (agentSlug == 'research') {
+      yield GatewayEvent(
+        type: 'search',
+        searchQuery: message,
+        sourcesCount: 3,
+        searchProvider: 'wikipedia',
+      );
+    }
+
     final words = planetResponse.split(' ');
     for (int i = 0; i < words.length; i++) {
       await Future.delayed(const Duration(milliseconds: 20));
       yield GatewayEvent(
         type: 'token',
         delta: '${words[i]} ',
+      );
+    }
+
+    if (agentSlug == 'research') {
+      yield GatewayEvent(
+        type: 'sources',
+        searchQuery: message,
+        sources: [
+          ChatSource(
+            title: 'Orbital Telemetry & Research Database',
+            url: 'https://en.wikipedia.org/wiki/Space_exploration',
+            domain: 'en.wikipedia.org',
+            snippet: 'Verified telemetry metrics on planetary trajectories and observational research.',
+            publishedDate: DateTime.now().toIso8601String().split('T')[0],
+          ),
+          ChatSource(
+            title: 'Astrophysical Journal Records',
+            url: 'https://arxiv.org/archive/astro-ph',
+            domain: 'arxiv.org',
+            snippet: 'Peer-reviewed research syntheses regarding orbital mechanics and solar winds.',
+            publishedDate: DateTime.now().toIso8601String().split('T')[0],
+          ),
+        ],
       );
     }
 

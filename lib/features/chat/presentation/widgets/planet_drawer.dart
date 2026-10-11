@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/orbit_theme.dart';
 import '../../domain/models/conversation.dart';
 import '../../domain/models/planet.dart';
@@ -91,6 +92,25 @@ class PlanetDrawer extends StatelessWidget {
                 label: const Text('New Orbital Transmission'),
               ),
             ),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ListTile(
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/universe');
+                },
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                tileColor: OrbitTheme.orbitCard,
+                leading: const Icon(Icons.blur_on, color: OrbitTheme.earthCyan, size: 20),
+                title: const Text(
+                  '3D Universe View',
+                  style: TextStyle(color: OrbitTheme.starWhite, fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+                trailing: const Icon(Icons.chevron_right, color: OrbitTheme.starlightDark, size: 18),
+              ),
+            ),
+            const SizedBox(height: 8),
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),

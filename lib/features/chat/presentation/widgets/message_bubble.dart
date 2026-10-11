@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/orbit_theme.dart';
 import '../../domain/models/chat_message.dart';
 import '../../domain/models/planet.dart';
+import 'source_card.dart';
 
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;
@@ -125,6 +127,34 @@ class MessageBubble extends StatelessWidget {
                       ),
                     ),
 
+                  if (message.searchedWeb)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: OrbitTheme.neptuneEmerald.withAlpha(25),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: OrbitTheme.neptuneEmerald.withAlpha(80)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.travel_explore, size: 13, color: OrbitTheme.neptuneEmerald),
+                          const SizedBox(width: 5),
+                          Text(
+                            message.searchDate != null
+                                ? 'Searched the web • ${message.searchDate}'
+                                : 'Searched the web',
+                            style: const TextStyle(
+                              color: OrbitTheme.neptuneEmerald,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                   if (message.isError)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,6 +197,11 @@ class MessageBubble extends StatelessWidget {
                           ? '✦ Awaiting orbital stream...'
                           : message.content,
                       selectable: true,
+                      onTapLink: (text, href, title) {
+                        if (href != null) {
+                          launchUrl(Uri.parse(href), mode: LaunchMode.externalApplication);
+                        }
+                      },
                       styleSheet: MarkdownStyleSheet(
                         p: const TextStyle(
                           color: OrbitTheme.starWhite,
@@ -189,6 +224,41 @@ class MessageBubble extends StatelessWidget {
                         h3: const TextStyle(color: OrbitTheme.starWhite, fontWeight: FontWeight.bold),
                       ),
                     ),
+                    if (message.sources.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Divider(color: OrbitTheme.orbitCardBorder, height: 16),
+                            Row(
+                              children: [
+                                const Icon(Icons.source, size: 12, color: OrbitTheme.starlightDark),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'SOURCES (${message.sources.length})',
+                                  style: const TextStyle(
+                                    color: OrbitTheme.starlightDark,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  for (int i = 0; i < message.sources.length; i++)
+                                    SourceCard(index: i + 1, source: message.sources[i]),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     if (message.isStreaming)
                       const Padding(
                         padding: EdgeInsets.only(top: 6),

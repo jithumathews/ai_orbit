@@ -118,6 +118,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Launch 3D Universe',
+            icon: const Icon(Icons.blur_on, color: OrbitTheme.earthCyan, size: 22),
+            onPressed: () => context.push('/universe'),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: QuotaBadge(
@@ -150,13 +155,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       body: Column(
         children: [
-          Padding(
+          Container(
+            color: OrbitTheme.voidBlack,
             padding: const EdgeInsets.symmetric(vertical: 8),
-            child: PlanetSelector(
-              selectedPlanet: chatState.selectedPlanet,
-              onPlanetSelected: (planet) {
-                ref.read(chatNotifierProvider.notifier).switchPlanet(planet);
-              },
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 860),
+                child: PlanetSelector(
+                  selectedPlanet: chatState.selectedPlanet,
+                  onPlanetSelected: (planet) {
+                    ref.read(chatNotifierProvider.notifier).switchPlanet(planet);
+                  },
+                ),
+              ),
             ),
           ),
           const Divider(color: OrbitTheme.orbitCardBorder, height: 1),
@@ -164,20 +175,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           Expanded(
             child: chatState.messages.isEmpty
                 ? _buildEmptyState(chatState.selectedPlanet)
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    itemCount: chatState.messages.length,
-                    itemBuilder: (context, index) {
-                      final msg = chatState.messages[index];
-                      return MessageBubble(
-                        message: msg,
-                        currentPlanet: chatState.selectedPlanet,
-                        onRetry: msg.isError
-                            ? () => ref.read(chatNotifierProvider.notifier).retryLastMessage()
-                            : null,
-                      );
-                    },
+                : Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 860),
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        itemCount: chatState.messages.length,
+                        itemBuilder: (context, index) {
+                          final msg = chatState.messages[index];
+                          return MessageBubble(
+                            message: msg,
+                            currentPlanet: chatState.selectedPlanet,
+                            onRetry: msg.isError
+                                ? () => ref.read(chatNotifierProvider.notifier).retryLastMessage()
+                                : null,
+                          );
+                        },
+                      ),
+                    ),
                   ),
           ),
 
@@ -188,59 +205,112 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildEmptyState(Planet planet) {
+    List<String> suggestions;
+    switch (planet.slug) {
+      case 'coding':
+        suggestions = [
+          'Write a thread-safe cache in Dart',
+          'Design clean architecture repository layer',
+          'Debug async Stream race conditions',
+        ];
+        break;
+      case 'creative':
+        suggestions = [
+          'Draft a sci-fi prologue set in orbital colonies',
+          'Compose poetic copy for a deep-space observatory',
+          'Brainstorm celestial world-building lore',
+        ];
+        break;
+      case 'reasoning':
+        suggestions = [
+          'Deduce step-by-step logic for the Monty Hall problem',
+          'Analyze architectural trade-offs: Monolith vs Serverless',
+          'Evaluate Bayesian reasoning for uncertain telemetry',
+        ];
+        break;
+      case 'research':
+        suggestions = [
+          'What is the latest Flutter release?',
+          'Lionel Messi most recent match and score',
+          'Synthesize current global aerospace developments',
+        ];
+        break;
+      default:
+        suggestions = [
+          'Summarize orbital telemetry parameters',
+          'Explain general relativity in clear cosmic terms',
+          'Draft a structured weekly project brief',
+        ];
+        break;
+    }
+
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
+          constraints: const BoxConstraints(maxWidth: 520),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 64,
-                height: 64,
+                width: 68,
+                height: 68,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(colors: planet.gradient),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: planet.primaryColor.withAlpha(60),
-                      blurRadius: 24,
+                      color: planet.primaryColor.withAlpha(90),
+                      blurRadius: 28,
                       spreadRadius: 2,
                     ),
                   ],
                 ),
-                child: Icon(planet.icon, color: OrbitTheme.voidBlack, size: 32),
+                child: Icon(planet.icon, color: OrbitTheme.voidBlack, size: 34),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               Text(
                 planet.planetTitle,
                 style: const TextStyle(
                   color: OrbitTheme.starWhite,
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: planet.primaryColor.withAlpha(25),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: planet.primaryColor.withAlpha(60)),
+                ),
+                child: Text(
+                  planet.modelLabel,
+                  style: TextStyle(
+                    color: planet.primaryColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
               Text(
                 planet.description,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: OrbitTheme.starlightMuted,
-                  fontSize: 13,
-                  height: 1.4,
+                  fontSize: 13.5,
+                  height: 1.45,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 alignment: WrapAlignment.center,
-                children: [
-                  _suggestionChip('Summarize orbital telemetry'),
-                  _suggestionChip('Analyze system architecture trade-offs'),
-                  _suggestionChip('Deduce step-by-step logic'),
-                ],
+                children: suggestions.map(_suggestionChip).toList(),
               ),
             ],
           ),
@@ -251,9 +321,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Widget _suggestionChip(String label) {
     return ActionChip(
-      label: Text(label, style: const TextStyle(color: OrbitTheme.starlightMuted, fontSize: 11)),
+      label: Text(
+        label,
+        style: const TextStyle(color: OrbitTheme.starlightMuted, fontSize: 12),
+      ),
       backgroundColor: OrbitTheme.orbitCard,
       side: const BorderSide(color: OrbitTheme.orbitCardBorder),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       onPressed: () {
         _inputController.text = label;
         _sendMessage();
@@ -265,61 +339,174 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final isStreaming = chatState.isStreaming as bool;
     final planet = chatState.selectedPlanet as Planet;
 
+    String hintText;
+    switch (planet.slug) {
+      case 'coding':
+        hintText = 'Transmit architecture or coding query to Mars...';
+        break;
+      case 'creative':
+        hintText = 'Compose narrative, metaphor, or creative copy with Jupiter...';
+        break;
+      case 'reasoning':
+        hintText = 'Present logic, trade-off, or deduction problem to Saturn...';
+        break;
+      case 'research':
+        hintText = 'Ask Neptune for research or current events (Live Web Search)...';
+        break;
+      default:
+        hintText = 'Transmit message across the orbit...';
+        break;
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
-        color: OrbitTheme.deepSpace,
-        border: Border(top: BorderSide(color: OrbitTheme.orbitCardBorder)),
+        color: OrbitTheme.voidBlack,
+        border: Border(top: BorderSide(color: OrbitTheme.orbitCardBorder, width: 0.5)),
       ),
+      padding: const EdgeInsets.only(top: 8, bottom: 12, left: 16, right: 16),
       child: SafeArea(
         top: false,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: OrbitTheme.orbitCard,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: OrbitTheme.orbitCardBorder),
-                ),
-                child: TextField(
-                  controller: _inputController,
-                  maxLines: 5,
-                  minLines: 1,
-                  style: const TextStyle(color: OrbitTheme.starWhite, fontSize: 14),
-                  decoration: const InputDecoration(
-                    hintText: 'Transmit message across the orbit...',
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 860),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Unified Glassmorphic Capsule
+                Container(
+                  decoration: BoxDecoration(
+                    color: OrbitTheme.cosmicSurface.withAlpha(230),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: planet.primaryColor.withAlpha(70),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: planet.primaryColor.withAlpha(18),
+                        blurRadius: 20,
+                        spreadRadius: 1,
+                      ),
+                      const BoxShadow(
+                        color: Colors.black45,
+                        blurRadius: 8,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  onSubmitted: (_) => _sendMessage(),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: planet.gradient),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: isStreaming
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: OrbitTheme.voidBlack,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // Active Planet Indicator Pill
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 7, left: 2, right: 8),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: planet.primaryColor.withAlpha(25),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            planet.icon,
+                            color: planet.primaryColor,
+                            size: 16,
+                          ),
                         ),
-                      )
-                    : const Icon(Icons.send_rounded, color: OrbitTheme.voidBlack, size: 20),
-                onPressed: isStreaming ? null : _sendMessage,
-              ),
+                      ),
+
+                      // Text Field
+                      Expanded(
+                        child: TextField(
+                          controller: _inputController,
+                          maxLines: 6,
+                          minLines: 1,
+                          style: const TextStyle(
+                            color: OrbitTheme.starWhite,
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: hintText,
+                            hintStyle: const TextStyle(
+                              color: OrbitTheme.starlightDark,
+                              fontSize: 13.5,
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                            isDense: true,
+                          ),
+                          onSubmitted: (_) => _sendMessage(),
+                        ),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      // Send Button
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: planet.gradient),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: planet.primaryColor.withAlpha(80),
+                                blurRadius: 10,
+                                spreadRadius: 0,
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            tooltip: isStreaming ? 'Processing transmission...' : 'Transmit (Enter)',
+                            icon: isStreaming
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: OrbitTheme.voidBlack,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.arrow_upward_rounded,
+                                    color: OrbitTheme.voidBlack,
+                                    size: 20,
+                                  ),
+                            onPressed: isStreaming ? null : _sendMessage,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Micro Disclaimer / Status Caption
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.shield_outlined, size: 10, color: OrbitTheme.starlightDark.withAlpha(160)),
+                    const SizedBox(width: 4),
+                    Text(
+                      'AI Orbit • Model: ${planet.modelLabel} • Server-side Gateway Protected',
+                      style: TextStyle(
+                        color: OrbitTheme.starlightDark.withAlpha(180),
+                        fontSize: 10.5,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

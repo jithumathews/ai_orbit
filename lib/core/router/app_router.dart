@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/auth_notifier.dart';
 import '../../features/auth/presentation/auth_screen.dart';
 import '../../features/chat/presentation/chat_screen.dart';
+import '../../features/chat/presentation/universe_screen.dart';
 import '../../features/observatory/presentation/observatory_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -20,6 +21,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/auth',
         name: 'auth',
         builder: (context, state) => const AuthScreen(),
+      ),
+      GoRoute(
+        path: '/universe',
+        name: 'universe',
+        builder: (context, state) => const UniverseScreen(),
       ),
       GoRoute(
         path: '/observatory',

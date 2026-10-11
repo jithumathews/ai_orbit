@@ -15,31 +15,24 @@ final _privateConstructorUsedError = UnsupportedError(
   'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
 );
 
-ChatMessage _$ChatMessageFromJson(Map<String, dynamic> json) {
-  return _ChatMessage.fromJson(json);
-}
-
 /// @nodoc
 mixin _$ChatMessage {
   String get id => throw _privateConstructorUsedError;
   String get role =>
       throw _privateConstructorUsedError; // 'user', 'assistant', 'system'
   String get content => throw _privateConstructorUsedError;
-  @JsonKey(name: 'created_at')
   DateTime get createdAt => throw _privateConstructorUsedError;
   bool get isStreaming => throw _privateConstructorUsedError;
   bool get isError => throw _privateConstructorUsedError;
   String? get errorMessage => throw _privateConstructorUsedError;
-  @JsonKey(name: 'model_run_id')
   String? get modelRunId => throw _privateConstructorUsedError;
-  @JsonKey(name: 'fallback_from')
   String? get fallbackFrom => throw _privateConstructorUsedError;
-  @JsonKey(name: 'model_id')
   String? get modelId => throw _privateConstructorUsedError;
   String? get provider => throw _privateConstructorUsedError;
-
-  /// Serializes this ChatMessage to a JSON map.
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  List<ChatSource> get sources => throw _privateConstructorUsedError;
+  bool get searchedWeb => throw _privateConstructorUsedError;
+  String? get searchDate => throw _privateConstructorUsedError;
+  String? get searchQuery => throw _privateConstructorUsedError;
 
   /// Create a copy of ChatMessage
   /// with the given fields replaced by the non-null parameter values.
@@ -59,14 +52,18 @@ abstract class $ChatMessageCopyWith<$Res> {
     String id,
     String role,
     String content,
-    @JsonKey(name: 'created_at') DateTime createdAt,
+    DateTime createdAt,
     bool isStreaming,
     bool isError,
     String? errorMessage,
-    @JsonKey(name: 'model_run_id') String? modelRunId,
-    @JsonKey(name: 'fallback_from') String? fallbackFrom,
-    @JsonKey(name: 'model_id') String? modelId,
+    String? modelRunId,
+    String? fallbackFrom,
+    String? modelId,
     String? provider,
+    List<ChatSource> sources,
+    bool searchedWeb,
+    String? searchDate,
+    String? searchQuery,
   });
 }
 
@@ -96,6 +93,10 @@ class _$ChatMessageCopyWithImpl<$Res, $Val extends ChatMessage>
     Object? fallbackFrom = freezed,
     Object? modelId = freezed,
     Object? provider = freezed,
+    Object? sources = null,
+    Object? searchedWeb = null,
+    Object? searchDate = freezed,
+    Object? searchQuery = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -143,6 +144,22 @@ class _$ChatMessageCopyWithImpl<$Res, $Val extends ChatMessage>
                 ? _value.provider
                 : provider // ignore: cast_nullable_to_non_nullable
                       as String?,
+            sources: null == sources
+                ? _value.sources
+                : sources // ignore: cast_nullable_to_non_nullable
+                      as List<ChatSource>,
+            searchedWeb: null == searchedWeb
+                ? _value.searchedWeb
+                : searchedWeb // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            searchDate: freezed == searchDate
+                ? _value.searchDate
+                : searchDate // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            searchQuery: freezed == searchQuery
+                ? _value.searchQuery
+                : searchQuery // ignore: cast_nullable_to_non_nullable
+                      as String?,
           )
           as $Val,
     );
@@ -162,14 +179,18 @@ abstract class _$$ChatMessageImplCopyWith<$Res>
     String id,
     String role,
     String content,
-    @JsonKey(name: 'created_at') DateTime createdAt,
+    DateTime createdAt,
     bool isStreaming,
     bool isError,
     String? errorMessage,
-    @JsonKey(name: 'model_run_id') String? modelRunId,
-    @JsonKey(name: 'fallback_from') String? fallbackFrom,
-    @JsonKey(name: 'model_id') String? modelId,
+    String? modelRunId,
+    String? fallbackFrom,
+    String? modelId,
     String? provider,
+    List<ChatSource> sources,
+    bool searchedWeb,
+    String? searchDate,
+    String? searchQuery,
   });
 }
 
@@ -198,6 +219,10 @@ class __$$ChatMessageImplCopyWithImpl<$Res>
     Object? fallbackFrom = freezed,
     Object? modelId = freezed,
     Object? provider = freezed,
+    Object? sources = null,
+    Object? searchedWeb = null,
+    Object? searchDate = freezed,
+    Object? searchQuery = freezed,
   }) {
     return _then(
       _$ChatMessageImpl(
@@ -245,30 +270,48 @@ class __$$ChatMessageImplCopyWithImpl<$Res>
             ? _value.provider
             : provider // ignore: cast_nullable_to_non_nullable
                   as String?,
+        sources: null == sources
+            ? _value._sources
+            : sources // ignore: cast_nullable_to_non_nullable
+                  as List<ChatSource>,
+        searchedWeb: null == searchedWeb
+            ? _value.searchedWeb
+            : searchedWeb // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        searchDate: freezed == searchDate
+            ? _value.searchDate
+            : searchDate // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        searchQuery: freezed == searchQuery
+            ? _value.searchQuery
+            : searchQuery // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
 }
 
 /// @nodoc
-@JsonSerializable()
+
 class _$ChatMessageImpl extends _ChatMessage {
   const _$ChatMessageImpl({
     required this.id,
     required this.role,
     required this.content,
-    @JsonKey(name: 'created_at') required this.createdAt,
+    required this.createdAt,
     this.isStreaming = false,
     this.isError = false,
     this.errorMessage,
-    @JsonKey(name: 'model_run_id') this.modelRunId,
-    @JsonKey(name: 'fallback_from') this.fallbackFrom,
-    @JsonKey(name: 'model_id') this.modelId,
+    this.modelRunId,
+    this.fallbackFrom,
+    this.modelId,
     this.provider,
-  }) : super._();
-
-  factory _$ChatMessageImpl.fromJson(Map<String, dynamic> json) =>
-      _$$ChatMessageImplFromJson(json);
+    final List<ChatSource> sources = const [],
+    this.searchedWeb = false,
+    this.searchDate,
+    this.searchQuery,
+  }) : _sources = sources,
+       super._();
 
   @override
   final String id;
@@ -278,7 +321,6 @@ class _$ChatMessageImpl extends _ChatMessage {
   @override
   final String content;
   @override
-  @JsonKey(name: 'created_at')
   final DateTime createdAt;
   @override
   @JsonKey()
@@ -289,20 +331,33 @@ class _$ChatMessageImpl extends _ChatMessage {
   @override
   final String? errorMessage;
   @override
-  @JsonKey(name: 'model_run_id')
   final String? modelRunId;
   @override
-  @JsonKey(name: 'fallback_from')
   final String? fallbackFrom;
   @override
-  @JsonKey(name: 'model_id')
   final String? modelId;
   @override
   final String? provider;
+  final List<ChatSource> _sources;
+  @override
+  @JsonKey()
+  List<ChatSource> get sources {
+    if (_sources is EqualUnmodifiableListView) return _sources;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_sources);
+  }
+
+  @override
+  @JsonKey()
+  final bool searchedWeb;
+  @override
+  final String? searchDate;
+  @override
+  final String? searchQuery;
 
   @override
   String toString() {
-    return 'ChatMessage(id: $id, role: $role, content: $content, createdAt: $createdAt, isStreaming: $isStreaming, isError: $isError, errorMessage: $errorMessage, modelRunId: $modelRunId, fallbackFrom: $fallbackFrom, modelId: $modelId, provider: $provider)';
+    return 'ChatMessage(id: $id, role: $role, content: $content, createdAt: $createdAt, isStreaming: $isStreaming, isError: $isError, errorMessage: $errorMessage, modelRunId: $modelRunId, fallbackFrom: $fallbackFrom, modelId: $modelId, provider: $provider, sources: $sources, searchedWeb: $searchedWeb, searchDate: $searchDate, searchQuery: $searchQuery)';
   }
 
   @override
@@ -326,10 +381,16 @@ class _$ChatMessageImpl extends _ChatMessage {
                 other.fallbackFrom == fallbackFrom) &&
             (identical(other.modelId, modelId) || other.modelId == modelId) &&
             (identical(other.provider, provider) ||
-                other.provider == provider));
+                other.provider == provider) &&
+            const DeepCollectionEquality().equals(other._sources, _sources) &&
+            (identical(other.searchedWeb, searchedWeb) ||
+                other.searchedWeb == searchedWeb) &&
+            (identical(other.searchDate, searchDate) ||
+                other.searchDate == searchDate) &&
+            (identical(other.searchQuery, searchQuery) ||
+                other.searchQuery == searchQuery));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
     runtimeType,
@@ -344,6 +405,10 @@ class _$ChatMessageImpl extends _ChatMessage {
     fallbackFrom,
     modelId,
     provider,
+    const DeepCollectionEquality().hash(_sources),
+    searchedWeb,
+    searchDate,
+    searchQuery,
   );
 
   /// Create a copy of ChatMessage
@@ -353,11 +418,6 @@ class _$ChatMessageImpl extends _ChatMessage {
   @pragma('vm:prefer-inline')
   _$$ChatMessageImplCopyWith<_$ChatMessageImpl> get copyWith =>
       __$$ChatMessageImplCopyWithImpl<_$ChatMessageImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$ChatMessageImplToJson(this);
-  }
 }
 
 abstract class _ChatMessage extends ChatMessage {
@@ -365,19 +425,20 @@ abstract class _ChatMessage extends ChatMessage {
     required final String id,
     required final String role,
     required final String content,
-    @JsonKey(name: 'created_at') required final DateTime createdAt,
+    required final DateTime createdAt,
     final bool isStreaming,
     final bool isError,
     final String? errorMessage,
-    @JsonKey(name: 'model_run_id') final String? modelRunId,
-    @JsonKey(name: 'fallback_from') final String? fallbackFrom,
-    @JsonKey(name: 'model_id') final String? modelId,
+    final String? modelRunId,
+    final String? fallbackFrom,
+    final String? modelId,
     final String? provider,
+    final List<ChatSource> sources,
+    final bool searchedWeb,
+    final String? searchDate,
+    final String? searchQuery,
   }) = _$ChatMessageImpl;
   const _ChatMessage._() : super._();
-
-  factory _ChatMessage.fromJson(Map<String, dynamic> json) =
-      _$ChatMessageImpl.fromJson;
 
   @override
   String get id;
@@ -386,7 +447,6 @@ abstract class _ChatMessage extends ChatMessage {
   @override
   String get content;
   @override
-  @JsonKey(name: 'created_at')
   DateTime get createdAt;
   @override
   bool get isStreaming;
@@ -395,16 +455,21 @@ abstract class _ChatMessage extends ChatMessage {
   @override
   String? get errorMessage;
   @override
-  @JsonKey(name: 'model_run_id')
   String? get modelRunId;
   @override
-  @JsonKey(name: 'fallback_from')
   String? get fallbackFrom;
   @override
-  @JsonKey(name: 'model_id')
   String? get modelId;
   @override
   String? get provider;
+  @override
+  List<ChatSource> get sources;
+  @override
+  bool get searchedWeb;
+  @override
+  String? get searchDate;
+  @override
+  String? get searchQuery;
 
   /// Create a copy of ChatMessage
   /// with the given fields replaced by the non-null parameter values.
