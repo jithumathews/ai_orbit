@@ -1,0 +1,43 @@
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_$AiModelImpl _$$AiModelImplFromJson(Map<String, dynamic> json) =>
+    _$AiModelImpl(
+      id: json['id'] as String,
+      provider: json['provider'] as String,
+      modelId: json['model_id'] as String,
+      displayName: json['display_name'] as String,
+      capabilities:
+          (json['capabilities'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      maxOutputTokens: (json['max_output_tokens'] as num?)?.toInt() ?? 4096,
+      contextWindow: (json['context_window'] as num?)?.toInt() ?? 128000,
+      rpmLimit: (json['rpm_limit'] as num?)?.toInt() ?? 30,
+      dailyLimit: (json['daily_limit'] as num?)?.toInt() ?? 500,
+      enabled: json['enabled'] as bool? ?? true,
+      priority: (json['priority'] as num?)?.toInt() ?? 1,
+      status: json['status'] as String? ?? 'healthy',
+      avgLatencyMs: (json['avg_latency_ms'] as num?)?.toInt() ?? 0,
+      errorRate: (json['error_rate'] as num?)?.toDouble() ?? 0.0,
+    );
+
+Map<String, dynamic> _$$AiModelImplToJson(_$AiModelImpl instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'provider': instance.provider,
+      'model_id': instance.modelId,
+      'display_name': instance.displayName,
+      'capabilities': instance.capabilities,
+      'max_output_tokens': instance.maxOutputTokens,
+      'context_window': instance.contextWindow,
+      'rpm_limit': instance.rpmLimit,
+      'daily_limit': instance.dailyLimit,
+      'enabled': instance.enabled,
+      'priority': instance.priority,
+      'status': instance.status,
+      'avg_latency_ms': instance.avgLatencyMs,
+      'error_rate': instance.errorRate,
+    };

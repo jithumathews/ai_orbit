@@ -1,0 +1,36 @@
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_$UserQuotaImpl _$$UserQuotaImplFromJson(Map<String, dynamic> json) =>
+    _$UserQuotaImpl(
+      dailyCount: (json['daily_count'] as num?)?.toInt() ?? 0,
+      dailyLimit: (json['daily_limit'] as num?)?.toInt() ?? 50,
+      remaining: (json['remaining'] as num?)?.toInt() ?? 50,
+      tokenCount: (json['token_count'] as num?)?.toInt() ?? 0,
+      period: json['period'] as String? ?? '',
+    );
+
+Map<String, dynamic> _$$UserQuotaImplToJson(_$UserQuotaImpl instance) =>
+    <String, dynamic>{
+      'daily_count': instance.dailyCount,
+      'daily_limit': instance.dailyLimit,
+      'remaining': instance.remaining,
+      'token_count': instance.tokenCount,
+      'period': instance.period,
+    };
+
+_$ObservatoryTelemetryImpl _$$ObservatoryTelemetryImplFromJson(
+  Map<String, dynamic> json,
+) => _$ObservatoryTelemetryImpl(
+  models:
+      (json['models'] as List<dynamic>?)
+          ?.map((e) => AiModel.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
+  quota: UserQuota.fromJson(json['quota'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$$ObservatoryTelemetryImplToJson(
+  _$ObservatoryTelemetryImpl instance,
+) => <String, dynamic>{'models': instance.models, 'quota': instance.quota};
