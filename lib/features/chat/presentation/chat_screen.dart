@@ -6,6 +6,7 @@ import '../../../../core/constants/orbit_theme.dart';
 import '../../auth/presentation/auth_notifier.dart';
 import '../domain/models/planet.dart';
 import 'chat_notifier.dart';
+import 'chat_state.dart';
 import 'widgets/cosmic_scaffold.dart';
 import 'widgets/message_bubble.dart';
 import 'widgets/planet_drawer.dart';
@@ -106,7 +107,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 border: Border.all(color: chatState.selectedPlanet.primaryColor.withAlpha(80)),
               ),
               child: Text(
-                chatState.selectedPlanet.modelLabel,
+                getCurrentModelLabel(chatState),
                 style: TextStyle(
                   color: chatState.selectedPlanet.primaryColor,
                   fontSize: 10,
@@ -118,6 +119,49 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Clear ${chatState.selectedPlanet.name} History',
+            icon: const Icon(Icons.delete_sweep_outlined, color: OrbitTheme.starlightMuted, size: 20),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: OrbitTheme.deepSpace,
+                  title: Text(
+                    'Clear ${chatState.selectedPlanet.name} History?',
+                    style: const TextStyle(color: OrbitTheme.starWhite, fontSize: 16),
+                  ),
+                  content: Text(
+                    'This will remove all saved transmissions for ${chatState.selectedPlanet.name}.',
+                    style: const TextStyle(color: OrbitTheme.starlightMuted, fontSize: 13),
+                  ),
+                  actions: [
+                    TextButton(
+                      child: const Text('Cancel', style: TextStyle(color: OrbitTheme.starlightDark)),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: OrbitTheme.marsCrimson,
+                        foregroundColor: OrbitTheme.starWhite,
+                      ),
+                      child: const Text('Clear'),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        ref.read(chatNotifierProvider.notifier).clearActivePlanetHistory();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${chatState.selectedPlanet.name} history cleared'),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Launch 3D Universe',
             icon: const Icon(Icons.blur_on, color: OrbitTheme.earthCyan, size: 22),
@@ -231,15 +275,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       case 'research':
         suggestions = [
           'What is the latest Flutter release?',
-          'Lionel Messi most recent match and score',
+          'Explain CRISPR gene editing mechanisms and applications',
           'Synthesize current global aerospace developments',
         ];
         break;
       default:
         suggestions = [
-          'Summarize orbital telemetry parameters',
-          'Explain general relativity in clear cosmic terms',
-          'Draft a structured weekly project brief',
+          'Create a step-by-step roadmap for scalable software architecture',
+          'Draft a 90-day technical milestones execution plan',
+          'Synthesize project requirements into a phased roadmap',
         ];
         break;
     }
@@ -495,7 +539,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     Icon(Icons.shield_outlined, size: 10, color: OrbitTheme.starlightDark.withAlpha(160)),
                     const SizedBox(width: 4),
                     Text(
-                      'AI Orbit • Model: ${planet.modelLabel} • Server-side Gateway Protected',
+                      'AI Orbit • Model: ${getCurrentModelLabel(chatState)} • Server-side Gateway Protected',
                       style: TextStyle(
                         color: OrbitTheme.starlightDark.withAlpha(180),
                         fontSize: 10.5,

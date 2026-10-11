@@ -25,7 +25,7 @@ class Planet with _$Planet {
       slug: 'general',
       name: 'Earth',
       planetTitle: 'General Orbit',
-      description: 'Friendly, concise, everyday cosmic assistance.',
+      description: 'General assistant and planning/roadmaps.',
       icon: Icons.public,
       primaryColor: OrbitTheme.earthCyan,
       gradient: [Color(0xFF00B4DB), Color(0xFF0083B0)],
@@ -35,7 +35,7 @@ class Planet with _$Planet {
       slug: 'coding',
       name: 'Mars',
       planetTitle: 'Cybertron Engineer',
-      description: 'Precise code, architectures, and architectural trade-offs.',
+      description: 'Coding, debugging, and systems architecture.',
       icon: Icons.code,
       primaryColor: OrbitTheme.marsCrimson,
       gradient: [Color(0xFFFF416C), Color(0xFFFF4B2B)],
@@ -45,17 +45,17 @@ class Planet with _$Planet {
       slug: 'creative',
       name: 'Jupiter',
       planetTitle: 'Lumina Creative',
-      description: 'Imaginative storytelling, metaphors, and cosmic copy.',
+      description: 'Creative writing, storytelling, and idea generation.',
       icon: Icons.auto_awesome,
       primaryColor: OrbitTheme.jupiterViolet,
       gradient: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
-      defaultTemperature: 0.9,
+      defaultTemperature: 0.85,
     ),
     Planet(
       slug: 'reasoning',
       name: 'Saturn',
       planetTitle: 'Chronos Deep Reasoner',
-      description: 'Step-by-step logic, edge case analysis, and deduction.',
+      description: 'Deep reasoning, analytical deduction, and complex problem-solving.',
       icon: Icons.psychology,
       primaryColor: OrbitTheme.saturnGold,
       gradient: [Color(0xFFF7971E), Color(0xFFFFD200)],
@@ -65,7 +65,7 @@ class Planet with _$Planet {
       slug: 'research',
       name: 'Neptune',
       planetTitle: 'Kepler Research',
-      description: 'Objective synthesis, uncertainty acknowledgment, zero hallucinations.',
+      description: 'Scientific research, evidence synthesis, and explanations.',
       icon: Icons.biotech,
       primaryColor: OrbitTheme.neptuneEmerald,
       gradient: [Color(0xFF11998E), Color(0xFF38EF7D)],
@@ -85,27 +85,66 @@ class Planet with _$Planet {
   ];
 
   static Planet bySlug(String slug) {
+    if (slug == 'pluto') {
+      return allPlanets.firstWhere((p) => p.slug == 'multi-agent');
+    }
     return allPlanets.firstWhere(
       (p) => p.slug == slug,
       orElse: () => allPlanets.first,
     );
   }
 
-  /// Short model name shown in AppBar badge (read-only, no dropdown)
+  /// Specialty description for planet
+  String get specialty {
+    switch (slug) {
+      case 'general':
+        return 'general assistant and planning/roadmaps';
+      case 'coding':
+        return 'coding and debugging';
+      case 'creative':
+        return 'creative writing and ideas';
+      case 'reasoning':
+        return 'deep reasoning and analysis';
+      case 'research':
+        return 'research, science and explanations';
+      default:
+        return 'autonomous multi-agent constellation';
+    }
+  }
+
+  /// Preferred OpenRouter free model ID
+  String get preferredModelId {
+    switch (slug) {
+      case 'general':
+        return 'meta-llama/llama-3.3-70b-instruct:free';
+      case 'coding':
+        return 'qwen/qwen-2.5-coder-32b-instruct:free';
+      case 'creative':
+        return 'mistralai/mistral-small-24b-instruct-2501:free';
+      case 'reasoning':
+        return 'deepseek/deepseek-r1:free';
+      case 'research':
+        return 'meta-llama/llama-3.3-70b-instruct:free';
+      default:
+        return 'openrouter/free';
+    }
+  }
+
+  /// Model name shown in AppBar badge
   String get modelLabel {
     switch (slug) {
       case 'general':
-        return 'OpenRouter Free';
+        return 'Llama 3.3 70B';
       case 'coding':
-        return 'Cohere Code';
+        return 'Qwen 2.5 Coder';
       case 'creative':
-        return 'OpenRouter Free';
+        return 'Mistral 24B';
       case 'reasoning':
-        return 'OpenRouter Free';
+        return 'DeepSeek R1';
       case 'research':
-        return 'OpenRouter Free';
+        return 'Llama 3.3 70B';
       default:
-        return 'AI Model';
+        return 'OpenRouter Auto';
     }
   }
 }

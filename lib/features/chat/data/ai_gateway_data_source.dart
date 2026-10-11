@@ -92,6 +92,8 @@ class AiGatewayDataSource {
     required String agentSlug,
     String? modelId,
     required String message,
+    List<Map<String, String>> history = const [],
+    List<String> fallbackQueue = const [],
   }) async* {
     if (_authRepository.isMockMode || !OrbitConfig.isConfigured) {
       yield* _streamSimulated(
@@ -118,6 +120,8 @@ class AiGatewayDataSource {
       'agent_slug': agentSlug,
       'model_id': modelId,
       'message': message,
+      'history': history,
+      'fallback_models': fallbackQueue,
     });
 
     http.StreamedResponse streamedResponse;
@@ -130,7 +134,7 @@ class AiGatewayDataSource {
       yield GatewayEvent(
         type: 'fallback',
         fallbackFrom: 'Remote Gateway (Offline)',
-        fallbackTo: 'Orbit Engine',
+        fallbackTo: modelId ?? 'Orbit Engine',
         provider: 'local',
       );
       yield* _streamSimulated(
@@ -149,7 +153,7 @@ class AiGatewayDataSource {
         yield GatewayEvent(
           type: 'fallback',
           fallbackFrom: 'Edge Function 404 (Pending Deploy)',
-          fallbackTo: 'Orbit Engine',
+          fallbackTo: modelId ?? 'Orbit Engine',
           provider: 'local',
         );
         yield* _streamSimulated(
@@ -211,40 +215,47 @@ class AiGatewayDataSource {
         planetResponse = '### Architecture & Solution\n\n'
             'Here is the verified production implementation for your request:\n\n'
             '```dart\n'
-            '// Mars Cybertron Optimization\n'
+            '// Mars Engineering Optimization\n'
             'class OrbitEngine {\n'
             '  void execute() {\n'
             '    print("Telemetry verified: ${message.replaceAll('\n', ' ')}");\n'
             '  }\n'
             '}\n'
             '```\n\n'
-            '**Trade-offs:**\n'
-            '- High throughput with minimal overhead.\n'
-            '- Zero secrets embedded in client code.';
+            '**Key Trade-offs:**\n'
+            '- High throughput with deterministic O(1) memory overhead.\n'
+            '- Strict separation of concerns with robust error boundaries.';
         break;
       case 'creative':
-        planetResponse = '✦ *Lumina Nebula Whispers:*\n\n'
-            'Across the vast silence of space, your thought resonates: '
-            '"$message". Solar winds carry it beyond the orbital horizon into vibrant starlight.';
+        planetResponse = '✦ *Jupiter Lumina Vision:*\n\n'
+            'The celestial horizon unfolds with vivid clarity. '
+            '"$message" resonates through starlit silence, weaving imaginative threads into an inventive, original tapestry.';
         break;
       case 'reasoning':
-        planetResponse = '### Chronos Analytical Deduction:\n\n'
-            '1. **Premise Evaluation:** Examining input: "$message".\n'
-            '2. **Logical Deductions:** Breaking down step-by-step causality.\n'
-            '3. **Edge Case Analysis:** Testing boundary limits.\n'
-            '4. **Conclusion:** Proven deterministic result with rigorous validation.';
+        planetResponse = '### Saturn Chronos Deductive Analysis:\n\n'
+            '1. **Premise Evaluation:** Parsing request: "$message".\n'
+            '2. **Logical Decomposition:** Identifying primary constraints and dependencies.\n'
+            '3. **Edge Case Verification:** Testing boundary values and edge conditions.\n'
+            '4. **Rigorous Conclusion:** Synthesized deterministic outcome with full logical proof.';
         break;
       case 'research':
-        planetResponse = '### Kepler Research Synthesis\n\n'
-            '**Confidence Level:** High (Factual grounding only)\n\n'
-            '- **Core Finding:** Analyzed orbital parameters for: "$message".\n'
-            '- **Evidence Base:** Grounded in verifiable models.\n'
-            '- **Caveat:** Strict zero-hallucination constraint maintained.';
+        planetResponse = '### Neptune Kepler Scientific Synthesis\n\n'
+            '**Empirical Confidence:** High (Evidence-grounded synthesis)\n\n'
+            '- **Core Finding:** Evaluated current scientific consensus for: "$message".\n'
+            '- **Evidence Base:** Grounded in peer-reviewed scientific literature.\n'
+            '- **Caveat:** Strict distinction between established empirical facts and active hypotheses.';
+        break;
+      case 'multi-agent':
+      case 'pluto':
+        planetResponse = '### Pluto Constellation Hub\n\n'
+            'Multi-Agent orchestration station is in standby for Phase 2 deployment.';
         break;
       default:
-        planetResponse = 'Welcome to the Earth General Orbit station. '
-            'I have processed your query: "$message". '
-            'All constellation telemetry and fallback pathways are nominal.';
+        planetResponse = '### Earth General Guidance & Planning Roadmap\n\n'
+            '1. **Overview & Objectives:** Structured analysis of: "$message".\n'
+            '2. **Phase 1: Foundation & Requirements:** Establish core architecture, data contracts, and milestones.\n'
+            '3. **Phase 2: Implementation & Scaling:** Incremental execution with automated testing and continuous integration.\n'
+            '4. **Phase 3: Operational Excellence:** Resilient monitoring, observability, and strategic maintenance.';
         break;
     }
 
@@ -298,8 +309,8 @@ class AiGatewayDataSource {
     yield GatewayEvent(
       type: 'done',
       modelRunId: 'run-sim-${DateTime.now().millisecondsSinceEpoch}',
-      modelId: modelId ?? 'llama-3.3-70b-versatile',
-      provider: 'groq',
+      modelId: modelId ?? 'meta-llama/llama-3.3-70b-instruct:free',
+      provider: 'openrouter',
     );
   }
 }

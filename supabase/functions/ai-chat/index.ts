@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
       throw new GatewayError('bad_request', 'Invalid JSON payload in request', 400);
     }
 
-    const { conversation_id, agent_slug, model_id, message } = payload;
+    const { conversation_id, agent_slug, model_id, message, history, fallback_models } = payload;
 
     if (!conversation_id) {
       throw new GatewayError('bad_request', 'conversation_id is required', 400);
@@ -132,10 +132,10 @@ Deno.serve(async (req: Request) => {
     // 5. Select Primary Model and build Fallback Queue
     let primaryModel: AiModelRow | undefined;
     if (model_id) {
-      primaryModel = models.find((m) => m.id === model_id);
+      primaryModel = models.find((m) => m.id === model_id || m.model_id === model_id);
     }
     if (!primaryModel && agent.default_model_id) {
-      primaryModel = models.find((m) => m.id === agent.default_model_id);
+      primaryModel = models.find((m) => m.id === agent.default_model_id || m.model_id === agent.preferred_model);
     }
     if (!primaryModel) {
       primaryModel = models[0];
@@ -153,17 +153,38 @@ Deno.serve(async (req: Request) => {
       searchResult = await WebSearchService.search(message);
     }
 
-    // 4c. Load & Trim Conversation History
-    const { data: rawMessages } = await supabase
-      .from('messages')
-      .select('role, content')
-      .eq('conversation_id', conversation_id)
-      .order('created_at', { ascending: false })
-      .limit(MAX_HISTORY_MESSAGES);
+    // 4c. Load & Trim Conversation History (accept from client or query chat_history/messages)
+    let historyMessages: ChatMessage[] = [];
+    if (history && Array.isArray(history) && history.length > 0) {
+      historyMessages = history.map((m: any) => ({
+        role: m.role as 'user' | 'assistant' | 'system',
+        content: m.content || '',
+      }));
+    } else {
+      const { data: rawHistory } = await supabase
+        .from('chat_history')
+        .select('role, content')
+        .eq('agent_slug', agent_slug)
+        .order('created_at', { ascending: false })
+        .limit(MAX_HISTORY_MESSAGES);
 
-    const historyMessages: ChatMessage[] = (rawMessages || [])
-      .reverse()
-      .map((m) => ({ role: m.role as 'user' | 'assistant' | 'system', content: m.content }));
+      if (rawHistory && rawHistory.length > 0) {
+        historyMessages = rawHistory
+          .reverse()
+          .map((m) => ({ role: m.role as 'user' | 'assistant' | 'system', content: m.content }));
+      } else {
+        const { data: rawMessages } = await supabase
+          .from('messages')
+          .select('role, content')
+          .eq('conversation_id', conversation_id)
+          .order('created_at', { ascending: false })
+          .limit(MAX_HISTORY_MESSAGES);
+
+        historyMessages = (rawMessages || [])
+          .reverse()
+          .map((m) => ({ role: m.role as 'user' | 'assistant' | 'system', content: m.content }));
+      }
+    }
 
     // 4d. Construct Grounded System Prompt
     const todayDate = new Date().toISOString().split('T')[0];
@@ -193,12 +214,27 @@ Deno.serve(async (req: Request) => {
       { role: 'user', content: message.trim() },
     ];
 
-    // Save the user message to database immediately
+    // Save the user message to messages table
     await supabase.from('messages').insert({
       conversation_id,
       role: 'user',
       content: message.trim(),
     });
+
+    // Save the user message to chat_history table
+    try {
+      await supabase.from('chat_history').insert({
+        agent_id: agent.id,
+        agent_slug,
+        user_id: user.id,
+        session_id: user.id,
+        role: 'user',
+        content: message.trim(),
+        model_used: primaryModel.model_id,
+      });
+    } catch (_histErr) {
+      // Non-fatal if chat_history table is pending migration
+    }
 
     // 6. Set up SSE Stream Response
     const responseStream = new TransformStream();
@@ -348,6 +384,21 @@ Deno.serve(async (req: Request) => {
           content: fullAssistantReply,
           model_run_id: finalRunId,
         });
+
+        // Save assistant message to chat_history table
+        try {
+          await supabase.from('chat_history').insert({
+            agent_id: agent.id,
+            agent_slug,
+            user_id: user.id,
+            session_id: user.id,
+            role: 'assistant',
+            content: fullAssistantReply,
+            model_used: successfulModel.model_id,
+          });
+        } catch (_histErr) {
+          // Non-fatal if chat_history table is pending migration
+        }
 
         // Record token usage in user_usage
         await supabase.rpc('record_token_usage', {
