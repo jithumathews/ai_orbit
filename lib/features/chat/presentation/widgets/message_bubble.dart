@@ -11,12 +11,16 @@ class MessageBubble extends StatelessWidget {
   final ChatMessage message;
   final Planet currentPlanet;
   final VoidCallback? onRetry;
+  final void Function(ChatMessage message)? onExtractTasks;
+  final bool showDebugFallback;
 
   const MessageBubble({
     super.key,
     required this.message,
     required this.currentPlanet,
     this.onRetry,
+    this.onExtractTasks,
+    this.showDebugFallback = false,
   });
 
   @override
@@ -101,7 +105,7 @@ class MessageBubble extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (message.fallbackFrom != null)
+                  if (showDebugFallback && message.fallbackFrom != null)
                     Container(
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -273,12 +277,61 @@ class MessageBubble extends StatelessWidget {
                       ),
                   ],
 
-                  if (!message.isStreaming && !message.isError && message.content.isNotEmpty)
+                  if (!message.isStreaming && !message.isError && message.content.isNotEmpty) ...[
+                    // Phase 4: "Extract action items" chip under Earth roadmap / actionable answers
+                    if (onExtractTasks != null &&
+                        (currentPlanet.slug == 'general' ||
+                            message.content.contains('- ') ||
+                            message.content.contains('1. ') ||
+                            message.content.toLowerCase().contains('roadmap') ||
+                            message.content.toLowerCase().contains('phase')))
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: InkWell(
+                          onTap: () => onExtractTasks!(message),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: OrbitTheme.earthCyan.withAlpha(20),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: OrbitTheme.earthCyan.withAlpha(90)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.auto_awesome, size: 12, color: OrbitTheme.earthCyan),
+                                SizedBox(width: 5),
+                                Text(
+                                  'Extract action items',
+                                  style: TextStyle(
+                                    color: OrbitTheme.earthCyan,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
+                          if (onExtractTasks != null)
+                            TextButton.icon(
+                              onPressed: () => onExtractTasks!(message),
+                              style: TextButton.styleFrom(
+                                foregroundColor: OrbitTheme.earthCyan,
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              icon: const Icon(Icons.add_task, size: 13),
+                              label: const Text('Create tasks', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                            ),
                           IconButton(
                             icon: const Icon(Icons.copy, size: 14, color: OrbitTheme.starlightDark),
                             padding: EdgeInsets.zero,
@@ -297,6 +350,7 @@ class MessageBubble extends StatelessWidget {
                         ],
                       ),
                     ),
+                  ],
                 ],
               ),
             ),

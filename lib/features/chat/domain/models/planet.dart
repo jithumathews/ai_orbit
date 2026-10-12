@@ -20,6 +20,8 @@ class Planet with _$Planet {
     @Default(0.7) double defaultTemperature,
   }) = _Planet;
 
+  static List<Planet> get availablePlanets => allPlanets;
+
   static const List<Planet> allPlanets = [
     Planet(
       slug: 'general',
@@ -85,13 +87,29 @@ class Planet with _$Planet {
   ];
 
   static Planet bySlug(String slug) {
-    if (slug == 'pluto') {
+    final s = slug.toLowerCase().trim();
+    if (s == 'pluto' || s == 'multi-agent') {
       return allPlanets.firstWhere((p) => p.slug == 'multi-agent');
     }
     return allPlanets.firstWhere(
-      (p) => p.slug == slug,
+      (p) => p.slug == s || p.name.toLowerCase() == s,
       orElse: () => allPlanets.first,
     );
+  }
+
+  static Planet? findBySlugOrName(String? identifier) {
+    if (identifier == null || identifier.trim().isEmpty) return null;
+    final s = identifier.toLowerCase().trim();
+    if (s == 'pluto' || s == 'multi-agent') {
+      return allPlanets.firstWhere((p) => p.slug == 'multi-agent');
+    }
+    try {
+      return allPlanets.firstWhere(
+        (p) => p.slug == s || p.name.toLowerCase() == s,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Specialty description for planet

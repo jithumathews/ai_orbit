@@ -9,11 +9,16 @@ import '../domain/models/planet.dart';
 import 'chat_state.dart';
 import 'planet_notifier.dart';
 
+final chatDraftInputProvider = StateProvider<String>((ref) => '');
+
 final chatNotifierProvider = NotifierProvider<ChatNotifier, ChatState>(() {
   return ChatNotifier();
 });
 
 class ChatNotifier extends Notifier<ChatState> {
+  void prefillPrompt(String prompt) {
+    ref.read(chatDraftInputProvider.notifier).state = prompt;
+  }
   // Use a getter so Riverpod rebuild never causes LateInitializationError
   ChatRepository get _repository => ref.read(chatRepositoryProvider);
   StreamSubscription? _streamSub;
@@ -118,6 +123,30 @@ class ChatNotifier extends Notifier<ChatState> {
   Future<void> clearActivePlanetHistory() async {
     await _repository.clearHistory(agentSlug: state.selectedPlanet.slug);
     state = state.copyWith(messages: []);
+  }
+
+  /// Add a user message to the conversation history without triggering chat streaming or model calls.
+  /// Used for task intent commands so the prompt appears in chat and anchors draft task suggestions.
+  Future<ChatMessage> addUserMessageOnly(String text) async {
+    final trimmed = text.trim();
+    if (state.activeConversation == null) {
+      await startNewConversation();
+    }
+    final userMsg = ChatMessage(
+      id: 'msg-usr-${DateTime.now().millisecondsSinceEpoch}',
+      role: 'user',
+      content: trimmed,
+      createdAt: DateTime.now(),
+      modelId: 'task-intent',
+    );
+    state = state.copyWith(messages: [...state.messages, userMsg]);
+    await _repository.saveHistoryMessage(
+      agentSlug: state.selectedPlanet.slug,
+      role: 'user',
+      content: trimmed,
+      modelUsed: 'task-intent',
+    );
+    return userMsg;
   }
 
   /// Task 3 & Task 2: Send message with prompt analysis, model routing, history context & saving

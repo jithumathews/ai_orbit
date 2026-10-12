@@ -2,8 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/orbit_config.dart';
+import '../../../../core/config/model_routing_config.dart';
 import '../../../../core/constants/orbit_theme.dart';
 import '../../auth/presentation/auth_notifier.dart';
+import '../../tasks/data/task_repository.dart';
+import '../../tasks/presentation/task_notifier.dart';
+import '../../tasks/presentation/workspace_notifier.dart';
+import '../../tasks/presentation/widgets/task_badge.dart';
+import '../../tasks/presentation/widgets/task_panel.dart';
+import '../../tasks/presentation/widgets/task_suggestions_card.dart';
+import '../domain/models/chat_message.dart';
 import '../domain/models/planet.dart';
 import 'chat_notifier.dart';
 import 'chat_state.dart';
@@ -23,6 +31,9 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  List<Map<String, dynamic>>? _extractedDrafts;
+  String? _extractedSourceMsgId;
+  bool _isExtracting = false;
 
   @override
   void initState() {
@@ -51,6 +62,87 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
+  Future<void> _handleNaturalLanguageQuickAdd(String prompt) async {
+    final userMsg = await ref.read(chatNotifierProvider.notifier).addUserMessageOnly(prompt);
+    setState(() {
+      _isExtracting = true;
+      _extractedSourceMsgId = userMsg.id;
+    });
+    _scrollToBottom();
+
+    final wsState = ref.read(workspaceNotifierProvider);
+    try {
+      final drafts = await ref.read(taskRepositoryProvider).parseTasksFromText(
+        text: prompt,
+        workspaceId: wsState.activeWorkspace?.id,
+      );
+      if (mounted) {
+        setState(() {
+          _isExtracting = false;
+          _extractedDrafts = drafts.isNotEmpty ? drafts : null;
+        });
+        if (drafts.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No actionable tasks found in your transmission. Try rephrasing with specific action items.'),
+              backgroundColor: OrbitTheme.starlightDark,
+            ),
+          );
+        } else {
+          _scrollToBottom();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isExtracting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to parse task: $e'),
+            backgroundColor: OrbitTheme.marsCrimson,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _extractTasksFromMessage(ChatMessage message) async {
+    setState(() => _isExtracting = true);
+    final wsState = ref.read(workspaceNotifierProvider);
+    try {
+      final drafts = await ref.read(taskRepositoryProvider).extractTasksFromMessage(
+        messageId: message.id,
+        workspaceId: wsState.activeWorkspace?.id,
+      );
+      if (mounted) {
+        setState(() {
+          _isExtracting = false;
+          _extractedDrafts = drafts.isNotEmpty ? drafts : null;
+          _extractedSourceMsgId = message.id;
+        });
+        if (drafts.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No action items found in this transmission.'),
+              backgroundColor: OrbitTheme.starlightDark,
+            ),
+          );
+        } else {
+          _scrollToBottom();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isExtracting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to extract tasks: $e'),
+            backgroundColor: OrbitTheme.marsCrimson,
+          ),
+        );
+      }
+    }
+  }
+
   void _sendMessage() {
     final text = _inputController.text.trim();
     if (text.isEmpty) return;
@@ -66,6 +158,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
 
     _inputController.clear();
+
+    // Phase B: Intercept task intent BEFORE sending to chat or web search
+    if (PromptAnalyzer.isTaskIntent(text)) {
+      _handleNaturalLanguageQuickAdd(text);
+      return;
+    }
+
     ref.read(chatNotifierProvider.notifier).sendMessage(text);
     _scrollToBottom();
   }
@@ -75,11 +174,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatNotifierProvider);
     final authState = ref.watch(authNotifierProvider);
+    final taskState = ref.watch(taskNotifierProvider);
 
     ref.listen(chatNotifierProvider, (previous, next) {
       if (previous?.messages.length != next.messages.length ||
           (previous?.isStreaming == false && next.isStreaming)) {
         _scrollToBottom();
+      }
+    });
+
+    ref.listen<String>(chatDraftInputProvider, (previous, next) {
+      if (next.isNotEmpty) {
+        _inputController.text = next;
+        ref.read(chatDraftInputProvider.notifier).state = '';
       }
     });
 
@@ -167,6 +274,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             icon: const Icon(Icons.blur_on, color: OrbitTheme.earthCyan, size: 22),
             onPressed: () => context.push('/universe'),
           ),
+          Builder(
+            builder: (ctx) => Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: OpenTaskCountBadge(
+                count: taskState.openTaskCount,
+                onTap: () => Scaffold.of(ctx).openEndDrawer(),
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: QuotaBadge(
@@ -197,6 +313,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           }
         },
       ),
+      endDrawer: Drawer(
+        width: MediaQuery.of(context).size.width > 540
+            ? 480
+            : MediaQuery.of(context).size.width * 0.9,
+        backgroundColor: OrbitTheme.deepSpace,
+        child: TaskPanel(
+          onClose: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: Column(
         children: [
           Container(
@@ -217,7 +342,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           const Divider(color: OrbitTheme.orbitCardBorder, height: 1),
 
           Expanded(
-            child: chatState.messages.isEmpty
+            child: chatState.messages.isEmpty && !_isExtracting && _extractedDrafts == null
                 ? _buildEmptyState(chatState.selectedPlanet)
                 : Align(
                     alignment: Alignment.topCenter,
@@ -226,16 +351,58 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       child: ListView.builder(
                         controller: _scrollController,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        itemCount: chatState.messages.length,
+                        itemCount: chatState.messages.length +
+                            (_isExtracting ? 1 : 0) +
+                            (_extractedDrafts != null ? 1 : 0),
                         itemBuilder: (context, index) {
-                          final msg = chatState.messages[index];
-                          return MessageBubble(
-                            message: msg,
-                            currentPlanet: chatState.selectedPlanet,
-                            onRetry: msg.isError
-                                ? () => ref.read(chatNotifierProvider.notifier).retryLastMessage()
-                                : null,
-                          );
+                          if (index < chatState.messages.length) {
+                            final msg = chatState.messages[index];
+                            return MessageBubble(
+                              message: msg,
+                              currentPlanet: chatState.selectedPlanet,
+                              onRetry: msg.isError
+                                  ? () => ref.read(chatNotifierProvider.notifier).retryLastMessage()
+                                  : null,
+                              onExtractTasks: _extractTasksFromMessage,
+                            );
+                          } else if (_isExtracting && index == chatState.messages.length) {
+                            return Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: OrbitTheme.orbitCard,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: OrbitTheme.earthCyan.withAlpha(100)),
+                              ),
+                              child: const Row(
+                                children: [
+                                  SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation(OrbitTheme.earthCyan),
+                                    ),
+                                  ),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    '✦ Extracting orbital action items with planetary intelligence...',
+                                    style: TextStyle(color: OrbitTheme.earthCyan, fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            );
+                          } else {
+                            return TaskSuggestionsCard(
+                              rawDrafts: _extractedDrafts!,
+                              sourceMessageId: _extractedSourceMsgId,
+                              sourceConversationId: chatState.activeConversation?.id,
+                              onDismiss: () => setState(() => _extractedDrafts = null),
+                              onCreated: (count) {
+                                setState(() => _extractedDrafts = null);
+                              },
+                            );
+                          }
                         },
                       ),
                     ),

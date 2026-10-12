@@ -3,6 +3,7 @@
 // and establishing fallback priority chains per planet persona.
 
 enum PromptType {
+  taskCommand,
   code,
   creative,
   reasoning,
@@ -158,7 +159,7 @@ class ModelRoutingConfig {
     'general': [
       'meta-llama/llama-3.3-70b-instruct:free',
       'deepseek/deepseek-r1:free',
-      'meta-llama/llama-3.1-8b-instruct:free',
+      'mistralai/mistral-small-24b-instruct-2501:free',
       'openrouter/free',
     ],
     'coding': [
@@ -226,6 +227,49 @@ class PromptAnalyzer {
     caseSensitive: false,
   );
 
+  static final RegExp _directTaskCommandPatterns = RegExp(
+    r'(\b(add\s+(a\s+)?tasks?(\s+to)?|create\s+(a\s+)?tasks?(\s+to)?|new\s+tasks?(\s+to)?|remind\s+me\s+to|todos?:?|to-dos?:?|assign\s+tasks?)\b|^\s*/tasks?\b)',
+    caseSensitive: false,
+  );
+
+  static final RegExp _actionVerbs = RegExp(
+    r'\b(deploy|test|write|fix|update|implement|review|verify|check|create|build|prepare|refactor|design|ship|publish|audit|configure|patch|run|inspect)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _temporalPatterns = RegExp(
+    r'\b(today|tomorrow|by\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)|next\s+week|this\s+week|by\s+tonight|asap|urgent|urgently|by\s+end\s+of\s+day|by\s+eod)\b',
+    caseSensitive: false,
+  );
+
+  static bool isTaskIntent(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return false;
+
+    // 1. Direct task command prefix
+    if (_directTaskCommandPatterns.hasMatch(trimmed)) {
+      return true;
+    }
+
+    // 2. Multi-clause imperative sentence with dates (e.g. "Deploy X today, test Y tomorrow, and write Z by Monday")
+    final hasTemporal = _temporalPatterns.hasMatch(trimmed);
+    if (hasTemporal) {
+      final verbMatches = _actionVerbs.allMatches(trimmed);
+      if (verbMatches.length >= 2) {
+        return true;
+      }
+      if (verbMatches.isNotEmpty &&
+          (trimmed.toLowerCase().contains('assign') ||
+           trimmed.toLowerCase().contains('give it to') ||
+           trimmed.toLowerCase().contains('urgent') ||
+           trimmed.toLowerCase().contains('asap'))) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   static PromptAnalysis analyze(String text) {
     final trimmed = text.trim();
     if (trimmed.isEmpty) {
@@ -236,8 +280,18 @@ class PromptAnalyzer {
       );
     }
 
-    // Check simple conversational greetings
-    if (_simpleGreetings.hasMatch(trimmed) || (trimmed.split(RegExp(r'\s+')).length <= 4 && !trimmed.contains('?'))) {
+    // Phase B: Task intent checked before everything else
+    if (isTaskIntent(trimmed)) {
+      return const PromptAnalysis(
+        type: PromptType.taskCommand,
+        complexity: ComplexityLevel.complex,
+        rationale: 'Actionable task creation command or multi-action schedule detected',
+      );
+    }
+
+    // Check simple conversational greetings (strictly short greetings <= 4 words without action verbs)
+    final wordList = trimmed.split(RegExp(r'\s+'));
+    if (_simpleGreetings.hasMatch(trimmed) && wordList.length <= 4 && !_actionVerbs.hasMatch(trimmed)) {
       return const PromptAnalysis(
         type: PromptType.simpleChat,
         complexity: ComplexityLevel.simple,
@@ -327,6 +381,15 @@ class ModelRouter {
     OpenRouterFreeModel chosenModel;
 
     switch (analysis.type) {
+      case PromptType.taskCommand:
+        // Use high-capacity planning/reasoning model (Llama 3.3 70B or planet's preferred)
+        if (allowedIds.contains(ModelRoutingConfig.llama33_70b.id)) {
+          chosenModel = ModelRoutingConfig.llama33_70b;
+        } else {
+          chosenModel = preferredModel;
+        }
+        break;
+
       case PromptType.code:
         // Prefer Qwen Coder if allowed on this planet, otherwise planet's preferred
         if (allowedIds.contains(ModelRoutingConfig.qwenCoder32b.id)) {

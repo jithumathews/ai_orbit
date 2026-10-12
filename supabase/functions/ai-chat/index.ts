@@ -343,7 +343,13 @@ Deno.serve(async (req: Request) => {
         }
 
         if (!successfulModel) {
-          // All models in fallback chain failed
+          // All models in fallback chain failed: refund quota so user is not penalized
+          try {
+            await supabase.rpc('refund_user_quota', { p_user_id: user.id });
+          } catch (refundErr) {
+            console.error('Failed to refund quota:', refundErr);
+          }
+
           await sendSSE('error', {
             error_code: 'provider_down',
             message: 'All orbital models are temporarily unreachable. Please retry shortly.',

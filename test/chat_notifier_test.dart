@@ -89,6 +89,18 @@ void main() {
     );
     expect(researchResult.analysis.type, equals(PromptType.research));
     expect(researchResult.chosenModel.id, equals('meta-llama/llama-3.3-70b-instruct:free'));
+
+    // 6. Task command intent detection and routing
+    const testTaskCommand = 'Deploy the new migrations today, test the RLS policies with Saturn by tomorrow, and write release notes by Monday';
+    final taskResult = ModelRouter.route(
+      planetSlug: 'general',
+      prompt: testTaskCommand,
+    );
+    expect(taskResult.analysis.type, equals(PromptType.taskCommand));
+    expect(taskResult.chosenModel.id, equals('meta-llama/llama-3.3-70b-instruct:free'));
+    expect(PromptAnalyzer.isTaskIntent(testTaskCommand), isTrue);
+    expect(PromptAnalyzer.isTaskIntent('Fix the quota RPC security grants by Friday, urgent, assign to Mars'), isTrue);
+    expect(PromptAnalyzer.isTaskIntent('hello'), isFalse);
   });
 
   test('ChatNotifier maintains separate conversation history per planet and supports clear history', () async {

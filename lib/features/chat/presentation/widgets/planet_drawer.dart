@@ -117,6 +117,25 @@ class PlanetDrawer extends StatelessWidget {
               child: ListTile(
                 onTap: () {
                   Navigator.pop(context);
+                  context.push('/tasks');
+                },
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                tileColor: OrbitTheme.orbitCard,
+                leading: const Icon(Icons.assignment_turned_in_outlined, color: OrbitTheme.earthCyan, size: 20),
+                title: const Text(
+                  'Orbital Tasks',
+                  style: TextStyle(color: OrbitTheme.starWhite, fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+                trailing: const Icon(Icons.chevron_right, color: OrbitTheme.starlightDark, size: 18),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ListTile(
+                onTap: () {
+                  Navigator.pop(context);
                   onOpenObservatory();
                 },
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

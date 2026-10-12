@@ -5,6 +5,7 @@ class CosmicScaffold extends StatelessWidget {
   final PreferredSizeWidget? appBar;
   final Widget body;
   final Widget? drawer;
+  final Widget? endDrawer;
   final Widget? bottomNavigationBar;
   final Widget? floatingActionButton;
 
@@ -13,6 +14,7 @@ class CosmicScaffold extends StatelessWidget {
     this.appBar,
     required this.body,
     this.drawer,
+    this.endDrawer,
     this.bottomNavigationBar,
     this.floatingActionButton,
   });
@@ -22,6 +24,7 @@ class CosmicScaffold extends StatelessWidget {
     return Scaffold(
       appBar: appBar,
       drawer: drawer,
+      endDrawer: endDrawer,
       bottomNavigationBar: bottomNavigationBar,
       floatingActionButton: floatingActionButton,
       backgroundColor: OrbitTheme.voidBlack,

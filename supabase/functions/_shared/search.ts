@@ -22,23 +22,27 @@ export class WebSearchService {
    * Determine if the user message or planet requires fresh web search
    */
   static shouldSearch(agentSlug: string, message: string): boolean {
+    // Neptune (Kepler Research) is the designated scientific research agent
     if (agentSlug === 'research') return true;
 
-    const lower = message.toLowerCase();
-    const freshnessKeywords = [
-      'latest', 'last', 'current', 'today', 'now', 'yesterday',
-      'score', 'news', 'price', 'rate', 'weather', 'who is',
-      'is he', 'is she', 'when did', 'what happened', 'release',
-      'version', 'update', 'status', 'standing', 'game', 'match',
-      'president', 'election', 'stock', 'crypto', 'fifa', 'nba',
-      'recent', 'newest'
+    // Never run web search on coding, reasoning, or creative agents
+    if (['coding', 'reasoning', 'creative'].includes(agentSlug)) return false;
+
+    const lower = message.toLowerCase().trim();
+
+    // Check explicit search intent phrases only
+    const explicitSearchKeywords = [
+      'search the web', 'search online', 'search internet',
+      'look up online', 'google this', 'find latest news on',
+      'live search', 'browse the web', 'web search for'
     ];
 
-    // Check for year patterns like 2024, 2025, 2026
-    const hasYear = /\b202[4-9]\b/.test(lower);
-    if (hasYear) return true;
+    if (explicitSearchKeywords.some((kw) => lower.includes(kw))) {
+      return true;
+    }
 
-    return freshnessKeywords.some((kw) => lower.includes(kw));
+    // Do NOT run web search for commands, task sentences, or roadmaps
+    return false;
   }
 
   /**
